@@ -8,7 +8,9 @@
 #
 # The local user account we are using
 #
-local_user=renderaccount
+local_user=www-data
+osmosis=/home/nick/src/osmosis-0.42/bin/osmosis
+osm2pgsql=/usr/local/bin/osm2pgsql
 #
 # First things first - is another copy of the script already running?
 #
@@ -31,9 +33,10 @@ fi
 # What's the first file that we are interested in?
 #
 #file_prefix1=british-isles
-file_prefix1=great-britain
-file_page1=http://download.geofabrik.de/europe/${file_prefix1}.html
-file_url1=http://download.geofabrik.de/europe/${file_prefix1}-latest.osm.pbf
+#file_prefix1=great-britain
+#file_prefix1=hampshire
+#file_page1=http://download.geofabrik.de/europe/${file_prefix1}.html
+#file_url1=http://download.geofabrik.de/europe/${file_prefix1}-latest.osm.pbf
 #
 #file_prefix1=england
 #file_prefix1=scotland
@@ -49,17 +52,19 @@ file_url1=http://download.geofabrik.de/europe/${file_prefix1}-latest.osm.pbf
 #file_prefix1=nottinghamshire
 #file_prefix1=staffordshire
 #file_prefix1=worcestershire
-#file_page1=http://download.geofabrik.de/europe/great-britain/england/${file_prefix1}.html
-#file_url1=http://download.geofabrik.de/europe/great-britain/england/${file_prefix1}-latest.osm.pbf
+file_prefix1=hampshire
+file_page1=http://download.geofabrik.de/europe/great-britain/england/${file_prefix1}.html
+file_url1=http://download.geofabrik.de/europe/great-britain/england/${file_prefix1}-latest.osm.pbf
 #
 # What's the second file that we are interested in?
 # Note that if this is commented out, also change the "merge" below to not use it.
 #
-file_prefix2=ireland-and-northern-ireland
+#file_prefix2=ireland-and-northern-ireland
 #file_prefix2=isle-of-man
-file_page2=http://download.geofabrik.de/europe/${file_prefix2}.html
-file_url2=http://download.geofabrik.de/europe/${file_prefix2}-latest.osm.pbf
-#
+#file_page2=http://download.geofabrik.de/europe/${file_prefix2}.html
+file_prefix2=west-sussex
+file_page2=http://download.geofabrik.de/europe/great-britain/england/${file_prefix2}.html
+file_url2=http://download.geofabrik.de/europe/great-britain/england/${file_prefix2}-latest.osm.pbf
 # Remove the openstreetmap-tiles-update-expire entry from the crontab.
 # Note that this matches a comment on the crontab line.
 #
@@ -74,9 +79,9 @@ cd /home/${local_user}/src/SomeoneElse-style
 pwd
 sudo -u ${local_user} git pull
 #
-cd /home/${local_user}/src/SomeoneElse-style-legend
-pwd
-sudo -u ${local_user} git pull
+#cd /home/${local_user}/src/SomeoneElse-style-legend
+#pwd
+#sudo -u ${local_user} git pull
 #
 cd /home/${local_user}/src/openstreetmap-carto-AJT
 pwd
@@ -122,33 +127,33 @@ fi
 # Welsh, English and Scottish names need to be converted to "cy or en", "en" and "gd or en" respectively.
 # First, convert a Welsh name portion intoto Welsh
 #
-osmosis  --read-pbf ${file_prefix1}_${file_extension1}.osm.pbf --bounding-polygon file="/home/${local_user}/src/SomeoneElse-style/welsh_areas.poly" --write-pbf welshlangpart_${file_extension1}_before.pbf
+${osmosis}  --read-pbf ${file_prefix1}_${file_extension1}.osm.pbf --bounding-polygon file="/home/${local_user}/src/SomeoneElse-style/welsh_areas.poly" --write-pbf welshlangpart_${file_extension1}_before.pbf
 #
-osmosis --read-pbf welshlangpart_${file_extension1}_before.pbf --tag-transform /home/${local_user}/src/SomeoneElse-style/transform_cy.xml --write-pbf welshlangpart_${file_extension1}_after.pbf
+${osmosis} --read-pbf welshlangpart_${file_extension1}_before.pbf --tag-transform /home/${local_user}/src/SomeoneElse-style/transform_cy.xml --write-pbf welshlangpart_${file_extension1}_after.pbf
 #
 # Likewise, Scots Gaelic
 #
-osmosis  --read-pbf ${file_prefix1}_${file_extension1}.osm.pbf  --bounding-box left=-9.23 bottom=55.56 right=-5.7 top=59.92 --write-pbf scotsgdlangpart_${file_extension1}_before.pbf
+${osmosis}  --read-pbf ${file_prefix1}_${file_extension1}.osm.pbf  --bounding-box left=-9.23 bottom=55.56 right=-5.7 top=59.92 --write-pbf scotsgdlangpart_${file_extension1}_before.pbf
 #
-osmosis --read-pbf scotsgdlangpart_${file_extension1}_before.pbf --tag-transform /home/${local_user}/src/SomeoneElse-style/transform_gd.xml --write-pbf scotsgdlangpart_${file_extension1}_after.pbf
+${osmosis} --read-pbf scotsgdlangpart_${file_extension1}_before.pbf --tag-transform /home/${local_user}/src/SomeoneElse-style/transform_gd.xml --write-pbf scotsgdlangpart_${file_extension1}_after.pbf
 #
 # Convert the remaining file to "English"
 #
-osmosis --read-pbf ${file_prefix1}_${file_extension1}.osm.pbf --tag-transform /home/${local_user}/src/SomeoneElse-style/transform_en.xml --write-pbf englangpart_${file_extension1}_after.pbf
+${osmosis} --read-pbf ${file_prefix1}_${file_extension1}.osm.pbf --tag-transform /home/${local_user}/src/SomeoneElse-style/transform_en.xml --write-pbf englangpart_${file_extension1}_after.pbf
 #
 # Note that "file2", if we need it, does not need processing.
 #
 # Merge them, in such a way that the cy and gd files take precedence over the en one.
 #
-osmosis --read-pbf welshlangpart_${file_extension1}_after.pbf --read-pbf scotsgdlangpart_${file_extension1}_after.pbf --read-pbf englangpart_${file_extension1}_after.pbf  --read-pbf ${file_prefix2}_${file_extension2}.osm.pbf --merge --merge --merge --write-pbf  langs_${file_extension1}_merged.pbf
+${osmosis} --read-pbf welshlangpart_${file_extension1}_after.pbf --read-pbf scotsgdlangpart_${file_extension1}_after.pbf --read-pbf englangpart_${file_extension1}_after.pbf  --read-pbf ${file_prefix2}_${file_extension2}.osm.pbf --merge --merge --merge --write-pbf  langs_${file_extension1}_merged.pbf
 #
 # Run osm2pgsql
 #
-sudo -u ${local_user} osm2pgsql --create --slim -d gis -C 2500 --number-processes 2 -S /home/${local_user}/src/openstreetmap-carto-AJT/openstreetmap-carto.style --multi-geometry --tag-transform-script /home/${local_user}/src/SomeoneElse-style/style.lua langs_${file_extension1}_merged.pbf
+sudo -u ${local_user} ${osm2pgsql} --create --slim -d gis -U gis -C 800 --number-processes 2 -S /home/${local_user}/src/openstreetmap-carto-AJT/openstreetmap-carto.style --multi-geometry --tag-transform-script /home/${local_user}/src/SomeoneElse-style/style.lua langs_${file_extension1}_merged.pbf
 #
-sudo -u ${local_user} osm2pgsql --append --slim -d gis -C 250 --number-processes 2 -S /home/${local_user}/src/openstreetmap-carto-AJT/openstreetmap-carto.style --multi-geometry --tag-transform-script /home/${local_user}/src/SomeoneElse-style/style.lua /home/${local_user}/src/SomeoneElse-style-legend/legend_roads.osm
+#sudo -u ${local_user} ${osm2pgsql} --append --slim -d gis -U gis -C 800 --number-processes 2 -S /home/${local_user}/src/openstreetmap-carto-AJT/openstreetmap-carto.style --multi-geometry --tag-transform-script /home/${local_user}/src/SomeoneElse-style/style.lua /home/${local_user}/src/SomeoneElse-style-legend/legend_roads.osm
 #
-sudo -u ${local_user} osm2pgsql --append --slim -d gis -C 250 --number-processes 2 -S /home/${local_user}/src/openstreetmap-carto-AJT/openstreetmap-carto.style --multi-geometry --tag-transform-script /home/${local_user}/src/SomeoneElse-style/style.lua /home/${local_user}/src/SomeoneElse-style-legend/generated_legend_pub.osm
+#sudo -u ${local_user} ${osm2pgsql} --append --slim -d gis -U gis -C 800 --number-processes 2 -S /home/${local_user}/src/openstreetmap-carto-AJT/openstreetmap-carto.style --multi-geometry --tag-transform-script /home/${local_user}/src/SomeoneElse-style/style.lua /home/${local_user}/src/SomeoneElse-style-legend/generated_legend_pub.osm
 #
 # Tidy temporary files
 #
